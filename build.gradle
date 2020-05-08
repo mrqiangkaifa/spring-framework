@@ -291,11 +291,17 @@ configure(allprojects) { project ->
 			enabled = false
 		}
 		resolutionStrategy {
-			cacheChangingModulesFor 0, "seconds"
+			cacheChangingModulesFor 24, 'hours'
+			cacheDynamicVersionsFor 10*60, 'seconds'
 		}
 		repositories {
+			//mavenCentral()
+			//maven { url "https://repo.spring.io/libs-spring-framework-build" }
+			mavenLocal()
+			maven {
+				url 'http://maven.aliyun.com/nexus/content/groups/public/'
+			}
 			mavenCentral()
-			maven { url "https://repo.spring.io/libs-spring-framework-build" }
 		}
 	}
 	configurations.all {
