@@ -76,6 +76,8 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 	}
 
 	/**
+	 * 参数configLocation是Bean定义资源文件路径
+	 *
 	 * Create a new FileSystemXmlApplicationContext, loading the definitions
 	 * from the given XML file and automatically refreshing the context.
 	 * @param configLocation file path
@@ -86,6 +88,8 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 	}
 
 	/**
+	 * 可以传入多个Bean定义资源文件路径
+	 *
 	 * Create a new FileSystemXmlApplicationContext, loading the definitions
 	 * from the given XML files and automatically refreshing the context.
 	 * @param configLocations array of file paths
@@ -122,6 +126,8 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 	}
 
 	/**
+	 * FileSystemXmlApplicationContext IoC容器进行初始化的入口构造函数
+	 *
 	 * Create a new FileSystemXmlApplicationContext with the given parent,
 	 * loading the definitions from the given XML files.
 	 * @param configLocations array of file paths
@@ -135,9 +141,20 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 	public FileSystemXmlApplicationContext(
 			String[] configLocations, boolean refresh, @Nullable ApplicationContext parent)
 			throws BeansException {
-
+		/**
+		 * 调用父类AbstractApplicationContext的构造方法new出资源类型解析器PathMatchingResourcePatternResolver
+		 * 并传入当前容器作为资源加载器resourceloader，资源类型解析器赋值给当前容器的成员变量this.resourcePatternResolver
+		 */
 		super(parent);
+		/**
+		 * 调用父类AbstractRefreshableConfigApplicationContext的方法，设置
+		 * Bean定义的资源文件，完成IoC容器Bean定义资源的定位 添加到成员变量数组this.configLocations
+		 */
 		setConfigLocations(configLocations);
+		/**
+		 * 调用父类AbstractApplicationContext的refresh()
+		 * 函数启动载入Bean定义的过程，是Ioc容器载入Bean定义的入口,正如作者上面对refresh参数的注释
+		 */
 		if (refresh) {
 			refresh();
 		}
@@ -145,6 +162,9 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 
 
 	/**
+	 * 该方法覆盖父类DefaultResourceLoader的方法，通过Bean定义文件路径封装得到//IoC容器要读入的定位Bean定义的资源
+	 * 其他类型的IoC容器会用其他类型的Resource来定位Bean定义，如//ClasspathResource等
+	 *
 	 * Resolve resource paths as file system paths.
 	 * <p>Note: Even if a given path starts with a slash, it will get
 	 * interpreted as relative to the current VM working directory.
@@ -158,6 +178,9 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 		if (path.startsWith("/")) {
 			path = path.substring(1);
 		}
+		/**
+		 * 其他类型的IoC容器会用其他类型的Resource来定位Bean定义，如//ClasspathResource等
+		 */
 		return new FileSystemResource(path);
 	}
 

@@ -306,6 +306,8 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	}
 
 	/**
+	 * 这里是载入XML形式Bean定义资源文件方法
+	 *
 	 * Load bean definitions from the specified XML file.
 	 * @param encodedResource the resource descriptor for the XML file,
 	 * allowing to specify an encoding to use for parsing the file
@@ -378,6 +380,8 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 
 
 	/**
+	 * 从特定XML文件中实际载入Bean定义资源的方法
+	 *
 	 * Actually load bean definitions from the specified XML file.
 	 * @param inputSource the SAX InputSource to read from
 	 * @param resource the resource descriptor for the XML file
@@ -390,7 +394,13 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			throws BeanDefinitionStoreException {
 
 		try {
+			/**
+			 * 将XML文件转换为DOM对象，解析过程由documentLoader实现
+			 */
 			Document doc = doLoadDocument(inputSource, resource);
+			/**
+			 * 这里是启动对Bean定义解析的详细过程，该解析过程会用到Spring的Bean配置规则
+			 */
 			int count = registerBeanDefinitions(doc, resource);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Loaded " + count + " bean definitions from " + resource);
@@ -496,6 +506,8 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	}
 
 	/**
+	 *按照Spring的Bean语义要求将Bean定义资源解析并转换为容器内部数据结构
+	 *
 	 * Register the bean definitions contained in the given DOM document.
 	 * Called by {@code loadBeanDefinitions}.
 	 * <p>Creates a new instance of the parser class and invokes
@@ -509,13 +521,28 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see BeanDefinitionDocumentReader#registerBeanDefinitions
 	 */
 	public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
+		/**
+		 * 得到BeanDefinitionDocumentReader来对xml格式的BeanDefinition解析
+		 */
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
+		/**
+		 * 获得容器中注册的Bean数量
+		 */
 		int countBefore = getRegistry().getBeanDefinitionCount();
+		/**
+		 * 解析过程入口，这里使用了委派模式，BeanDefinitionDocumentReader只是个接口，
+		 * 具体的解析实现过程有实现类DefaultBeanDefinitionDocumentReader完成
+		 */
 		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
+		/**
+		 * 统计解析的Bean数量
+		 */
 		return getRegistry().getBeanDefinitionCount() - countBefore;
 	}
 
 	/**
+	 * 创建BeanDefinitionDocumentReader对象，解析Document对象
+	 *
 	 * Create the {@link BeanDefinitionDocumentReader} to use for actually
 	 * reading bean definitions from an XML document.
 	 * <p>The default implementation instantiates the specified "documentReaderClass".

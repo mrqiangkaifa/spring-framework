@@ -279,8 +279,16 @@ public abstract class AbstractNestablePropertyAccessor extends AbstractPropertyA
 		}
 	}
 
+	/**
+	 * 实现属性依赖注入功能
+	 * @param tokens
+	 * @param pv
+	 */
 	@SuppressWarnings("unchecked")
 	private void processKeyedProperty(PropertyTokenHolder tokens, PropertyValue pv) {
+		/**
+		 * PropertyTokenHolder主要保存属性的名称、路径，以及集合的size等信息
+		 */
 		Object propValue = getPropertyHoldingValue(tokens);
 		PropertyHandler ph = getLocalPropertyHandler(tokens.actualName);
 		if (ph == null) {
