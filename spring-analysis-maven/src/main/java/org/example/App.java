@@ -17,7 +17,7 @@ import java.lang.reflect.Method;
 public class App 
 {
     public static void main( String[] args ) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-		ApplicationContext context = new FileSystemXmlApplicationContext("D:\\work_space\\spring\\spring-framework\\spring-analysis-maven\\src\\main\\resources\\simpleContext.xml");
+		ApplicationContext context = new FileSystemXmlApplicationContext("D:\\devtools\\workspace\\spring-framework\\spring-analysis-maven\\src\\main\\resources\\simpleContext.xml");
 		StaticMessageSource staticMessageSource = (StaticMessageSource)context.getBean("someMessageSource");
 		AServiceImpl  iBaseService = (AServiceImpl)context.getBean(IBaseService.class);
 		Method method = iBaseService.getClass().getDeclaredMethod("Get",Person.class);
