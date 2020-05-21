@@ -32,15 +32,21 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public class ProxyCreatorSupport extends AdvisedSupport {
 
+	/**
+	 * AOPProxy工厂
+	 */
 	private AopProxyFactory aopProxyFactory;
 
 	private final List<AdvisedSupportListener> listeners = new LinkedList<>();
 
-	/** Set to true when the first AOP proxy has been created. */
+	/**
+	 * 当第一个AOPProxy代理对象被创建时，设置为true
+	 * Set to true when the first AOP proxy has been created. */
 	private boolean active = false;
 
 
 	/**
+	 * 默认使用DefaultAopProxyFactory作用AOP代理工厂
 	 * Create a new ProxyCreatorSupport instance.
 	 */
 	public ProxyCreatorSupport() {
@@ -95,6 +101,8 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 
 
 	/**
+	 * 调用DefaultAopProxyFactory的创建AOPProxy代理的方法
+	 *
 	 * Subclasses should call this to get a new AOP proxy. They should <b>not</b>
 	 * create an AOP proxy with {@code this} as an argument.
 	 */
@@ -106,6 +114,7 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 	}
 
 	/**
+	 * 激活AOP代理配置，向容器注册代理回调监听器，第一次创建AOP代理时调用
 	 * Activate this proxy configuration.
 	 * @see AdvisedSupportListener#activated
 	 */

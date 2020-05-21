@@ -33,15 +33,31 @@ import org.springframework.aop.MethodBeforeAdvice;
  */
 @SuppressWarnings("serial")
 class MethodBeforeAdviceAdapter implements AdvisorAdapter, Serializable {
-
+	/**
+	 * 检查通知是否为通知适配器适配的通知类型
+	 * @param advice an Advice such as a BeforeAdvice
+	 * @return
+	 */
 	@Override
 	public boolean supportsAdvice(Advice advice) {
 		return (advice instanceof MethodBeforeAdvice);
 	}
 
+	/**
+	 * 获取通知拦截器
+	 * @param advisor the Advisor. The supportsAdvice() method must have
+	 * returned true on this object
+	 * @return
+	 */
 	@Override
 	public MethodInterceptor getInterceptor(Advisor advisor) {
+		/**
+		 * 获取通知器的通知
+		 */
 		MethodBeforeAdvice advice = (MethodBeforeAdvice) advisor.getAdvice();
+		/**
+		 * 将通知封装为方法拦截器
+		 */
 		return new MethodBeforeAdviceInterceptor(advice);
 	}
 

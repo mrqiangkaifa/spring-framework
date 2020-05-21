@@ -7,6 +7,7 @@ package org.example.test;
  * @create: 2020-05-12 22:13
  **/
 public class Person {
+	private AServiceImpl service;
 	private String name ;
 
 	public String getName() {
@@ -20,5 +21,13 @@ public class Person {
 	@Override
 	public String toString() {
 		return name;
+	}
+
+	public AServiceImpl getService() {
+		return service;
+	}
+
+	public void setService(AServiceImpl service) {
+		this.service = service;
 	}
 }

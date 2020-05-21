@@ -25,6 +25,7 @@ public class App
 		person.setName("test");
 		Object o = method.invoke(iBaseService,person);
 		System.out.println(o.toString());
+		System.out.println(iBaseService.getPerson().getService().Get(person));
 		System.out.println("ceshi");
 		System.out.println(context.getApplicationName());
     }

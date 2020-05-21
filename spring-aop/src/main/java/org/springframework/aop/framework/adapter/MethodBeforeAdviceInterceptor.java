@@ -41,6 +41,8 @@ public class MethodBeforeAdviceInterceptor implements MethodInterceptor, BeforeA
 
 
 	/**
+	 *
+	 * 拦截器构造方法，初始化通知
 	 * Create a new MethodBeforeAdviceInterceptor for the given advice.
 	 * @param advice the MethodBeforeAdvice to wrap
 	 */
@@ -49,10 +51,21 @@ public class MethodBeforeAdviceInterceptor implements MethodInterceptor, BeforeA
 		this.advice = advice;
 	}
 
-
+	/**
+	 * 拦截器的回调方法，会在代理对象的方法调用前触发回调
+	 * @param mi
+	 * @return
+	 * @throws Throwable
+	 */
 	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
+		/**
+		 * 在目标方法调用之前，先调用前置通知的before方法
+		 */
 		this.advice.before(mi.getMethod(), mi.getArguments(), mi.getThis());
+		/**
+		 * 继续调用通知拦截链，调用ReflectiveMethodInvocation的proceed方法
+		 */
 		return mi.proceed();
 	}
 

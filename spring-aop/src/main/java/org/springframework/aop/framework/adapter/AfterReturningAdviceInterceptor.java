@@ -41,6 +41,7 @@ public class AfterReturningAdviceInterceptor implements MethodInterceptor, After
 
 
 	/**
+	 * 后置通知拦截器构造方法，初始化通知
 	 * Create a new AfterReturningAdviceInterceptor for the given advice.
 	 * @param advice the AfterReturningAdvice to wrap
 	 */
@@ -49,10 +50,21 @@ public class AfterReturningAdviceInterceptor implements MethodInterceptor, After
 		this.advice = advice;
 	}
 
-
+	/**
+	 * 后置通知拦截器回调方法
+	 * @param mi
+	 * @return
+	 * @throws Throwable
+	 */
 	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
+		/**
+		 * 调用ReflectiveMethodInvocation的proceed方法，调用通知链
+		 */
 		Object retVal = mi.proceed();
+		/**
+		 * 通知链调用最后才调用后置通知的返回之后回调方法
+		 */
 		this.advice.afterReturning(retVal, mi.getMethod(), mi.getArguments(), mi.getThis());
 		return retVal;
 	}

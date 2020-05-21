@@ -326,6 +326,8 @@ public abstract class AopUtils {
 	}
 
 	/**
+	 * 通过反射机制直接调用目标对象方法
+	 *
 	 * Invoke the given target via reflection, as part of an AOP method invocation.
 	 * @param target the target object
 	 * @param method the method to invoke
@@ -340,7 +342,13 @@ public abstract class AopUtils {
 
 		// Use reflection to invoke the method.
 		try {
+			/**
+			 * 通过反射使给定的方法可以访问，主要是对protected和private方法使用，取消严格访问控制权限的限制
+			 */
 			ReflectionUtils.makeAccessible(method);
+			/**
+			 * 使用反射机制调用目标对象的方法
+			 */
 			return method.invoke(target, args);
 		}
 		catch (InvocationTargetException ex) {
