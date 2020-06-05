@@ -74,18 +74,27 @@ public abstract class AopNamespaceUtils {
 	public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
 
+		//todo 注册方法,这里使用的register最终获取到的是BeanDefinitionRegistry
+		// extractSource方法是用来从配置的解析器提供的候选对象中提取源元数据
+		// 注册或升级AutoProxyCreator定义beanName为org.springframework.aop.config.internalAutoProxyCreator
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		//todo 处理proxy-target-class和expose-proxy属性
+		// proxy-target-class 属性是否创建了基于类的（CGLIB）代理？默认情况下，会创建基于Java接口的标准代
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+		//todo 注册组件并通知，便于监听器做进一步处理
+		// 其中beanDefinition的className为AnnotationAwareAspectJAutoProxyCreator
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, @Nullable Element sourceElement) {
 		if (sourceElement != null) {
+			//todo 获取配置中的proxy-target-class属性（是否强制使用CGLIB)
 			boolean proxyTargetClass = Boolean.parseBoolean(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));
 			if (proxyTargetClass) {
 				AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
 			}
+			//todo 获取配置中的expose-proxy属性的处理
 			boolean exposeProxy = Boolean.parseBoolean(sourceElement.getAttribute(EXPOSE_PROXY_ATTRIBUTE));
 			if (exposeProxy) {
 				AopConfigUtils.forceAutoProxyCreatorToExposeProxy(registry);

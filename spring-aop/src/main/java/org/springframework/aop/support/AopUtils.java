@@ -223,27 +223,32 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(pc, "Pointcut must not be null");
+		//todo 获取ClassFilter（过滤器限制切入点或介绍与给定目标类集的匹配）并通过需要代理的类的类名来匹配
 		if (!pc.getClassFilter().matches(targetClass)) {
 			return false;
 		}
 
+		//todo 获取切点的MethodMatcher方法匹配器
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
 			return true;
 		}
 
+		//todo 如果是引介增强类型的方法匹配器起则转化为引介增强的
 		IntroductionAwareMethodMatcher introductionAwareMethodMatcher = null;
 		if (methodMatcher instanceof IntroductionAwareMethodMatcher) {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
 		}
 
+		//todo 将需要代理的类相关的接口转化为set集合的，跟这个类所有有关的接口，父接口的接口也包括
 		Set<Class<?>> classes = new LinkedHashSet<>();
 		if (!Proxy.isProxyClass(targetClass)) {
 			classes.add(ClassUtils.getUserClass(targetClass));
 		}
 		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 
+		//todo 便利所有的class类的所有的方法，并去匹配对应的方法看是否存在对应的切点方法
 		for (Class<?> clazz : classes) {
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
 			for (Method method : methods) {
@@ -281,9 +286,11 @@ public abstract class AopUtils {
 	 * @return whether the pointcut can apply on any method
 	 */
 	public static boolean canApply(Advisor advisor, Class<?> targetClass, boolean hasIntroductions) {
+		//todo 引介增强和普通的增强的处理不一样，对于真正的匹配在canApply中实现的
 		if (advisor instanceof IntroductionAdvisor) {
 			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
 		}
+		//todo 普通的增强的处理
 		else if (advisor instanceof PointcutAdvisor) {
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
 			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
@@ -295,6 +302,17 @@ public abstract class AopUtils {
 	}
 
 	/**
+	 *
+	 *先介绍一下aop中的增强类型
+	 *
+	 * 前置增强 (org.springframework.aop.BeforeAdvice) 表示在目标方法执行前来实施增强
+	 * 后置增强 (org.springframework.aop.AfterReturningAdvice) 表示在目标方法执行后来实施增强
+	 * 环绕增强 (org.aopalliance.intercept.MethodInterceptor) 表示在目标方法执行前后同时实施增强
+	 * 异常抛出增强 (org.springframework.aop.ThrowsAdvice) 表示在目标方法抛出异常后来实施增强
+	 * 引介增强 (org.springframework.aop.introductioninterceptor) 表示在目标类中添加一些新的方法和属性
+	 *  其中，引介增强是一种特殊的增强。他可以在目标类中添加属性和方法，通过拦截定义一个接口，让目标代理实现这个接口。
+	 * 他的连接点是类级别的，而前面的几种则是方法级别的。
+	 *
 	 * Determine the sublist of the {@code candidateAdvisors} list
 	 * that is applicable to the given class.
 	 * @param candidateAdvisors the Advisors to evaluate
@@ -306,6 +324,7 @@ public abstract class AopUtils {
 		if (candidateAdvisors.isEmpty()) {
 			return candidateAdvisors;
 		}
+		//todo 首先出引介增强,引介增强（目标类中添加一些新的方法和属性，可以用户自己实现IntroductionAdvisor来进行自定义处理）
 		List<Advisor> eligibleAdvisors = new ArrayList<>();
 		for (Advisor candidate : candidateAdvisors) {
 			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
@@ -315,9 +334,11 @@ public abstract class AopUtils {
 		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
 		for (Advisor candidate : candidateAdvisors) {
 			if (candidate instanceof IntroductionAdvisor) {
+				//todo 引介增强已经处理过这里不处理
 				// already processed
 				continue;
 			}
+			//todo 只处理普通增强
 			if (canApply(candidate, clazz, hasIntroductions)) {
 				eligibleAdvisors.add(candidate);
 			}

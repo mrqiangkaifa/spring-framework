@@ -208,6 +208,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			 * 如果代理目标对象的接口中没有定义equals()方法，且当前调用的方法
 			 * 是equals()方法，即目标对象没有自己实现equals()方法
 			 */
+			//todo 如果没有在代理接口中定义equal方法，并且代理的方法是equals方法
 			if (!this.equalsDefined && AopUtils.isEqualsMethod(method)) {
 				// The target does not implement the equals(Object) method itself.
 				return equals(args[0]);
@@ -216,6 +217,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			 * 如果代理目标对象的接口中没有定义hashCode()方法，且当前调用的方法
 			 * 是hashCode()方法，即目标对象没有自己实现hashCode()方法
 			 */
+			//todo 同上是对hashCode方法的处理
 			else if (!this.hashCodeDefined && AopUtils.isHashCodeMethod(method)) {
 				// The target does not implement the hashCode() method itself.
 				return hashCode();
@@ -227,6 +229,9 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			/**
 			 * 如果AOP配置了通知，使用反射机制调用通知的同名方法
 			 */
+			//todo 如果代理方法是接口中的方法并且方法是Advised相同的类或者接口则进行处理
+			// Class类的isAssignableFrom(Class cls)表示如果调用这个方法的class或接口 与参数cls表示的类或接口相同，或者是
+			// 参数cls表示的类或接口的父类，则返回true
 			else if (!this.advised.opaque && method.getDeclaringClass().isInterface() &&
 					method.getDeclaringClass().isAssignableFrom(Advised.class)) {
 				// Service invocations on ProxyConfig with the proxy config...
@@ -237,6 +242,8 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			/**
 			 * 如果当前通知暴露了代理，则将当前代理使用currentProxy()方法变为可用代理
 			 */
+			//todo 如果目标对象存在内部的自我调用，则需要暴露代理
+			// exposeProxy： 设置代理是否应该由AOP框架作为ThreadLocal公开，以便通过AopContext类进行检索。如果建议的对象需要自己调用另一个建议的方法，这将非常有用
 			if (this.advised.exposeProxy) {
 				// Make invocation available if necessary.
 				oldProxy = AopContext.setCurrentProxy(proxy);
@@ -252,6 +259,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			/**
 			 * 获取目标对象方法配置的拦截器(通知器)链
 			 */
+			//todo 获取当前方法的连接器链
 			// Get the interception chain for this method.
 			List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 			/**
@@ -263,6 +271,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 				/**
 				 * 没有配置通知，使用反射直接调用目标对象的方法，并获取方法返回值
 				 */
+				//todo 如果不存在任何拦截器，则直接进行切点方法的调用
 				// We can skip creating a MethodInvocation: just invoke the target directly
 				// Note that the final invoker must be an InvokerInterceptor so we know it does
 				// nothing but a reflective operation on the target, and no hot swapping or fancy proxying.
@@ -276,12 +285,14 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 				/**
 				 * 为目标对象创建方法回调对象，需要在调用通知之后才调用目标对象的方法
 				 */
+				//todo 将拦截器链封装在ReflectiveMethodInvocation对象中，以便使用proceed方法调用
 				// We need to create a method invocation...
 				MethodInvocation invocation =
 						new ReflectiveMethodInvocation(proxy, target, method, args, targetClass, chain);
 				/**
 				 * 调用通知链，沿着通知器链调用所有配置的通知
 				 */
+				//todo 执行拦截方法
 				// Proceed to the joinpoint through the interceptor chain.
 				retVal = invocation.proceed();
 			}
@@ -302,6 +313,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 				throw new AopInvocationException(
 						"Null return value from advice does not match primitive return type for: " + method);
 			}
+			//todo 返回结果
 			return retVal;
 		}
 		finally {

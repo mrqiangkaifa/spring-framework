@@ -125,24 +125,30 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 		/**
 		 * 如果已经有容器，销毁容器中的bean，关闭容器
 		 */
+		//todo 通过beanFactoryMonitor这个Bean工厂的监视器来判断是否已经实例化了BeanFactory
 		if (hasBeanFactory()) {
+			//todo 如果实例化了BeanFactory，则先销毁所有的单例Bean
 			destroyBeans();
+			//todo 关闭BeanFactory，也就是将beanFactory的值置为null
 			closeBeanFactory();
 		}
 		try {
 			/**
 			 * 创建IoC容器
 			 */
+			//todo 创建BeanFactory实例，如果实现了ConfigurableApplicationContext则返回父上下文的内部bean工厂;否则，返回父上下文本身
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
 			beanFactory.setSerializationId(getId());
 			/**
 			 * 对IoC容器进行定制化，如设置启动参数，开启注解的自动装配等
 			 */
+			//todo 如果用户自定义了允许Bean定义覆盖和允许循环引用则设置为定义的，默认为不允许
 			customizeBeanFactory(beanFactory);
 			/**
 			 * 调用载入Bean定义的方法，主要这里又使用了一个委派模式，
 			 * 在当前类中只定义了抽象的loadBeanDefinitions方法，具体的实现调用子类容器
 			 */
+			//todo 加载bean，前面已经讲过bean的加载
 			loadBeanDefinitions(beanFactory);
 			synchronized (this.beanFactoryMonitor) {
 				this.beanFactory = beanFactory;

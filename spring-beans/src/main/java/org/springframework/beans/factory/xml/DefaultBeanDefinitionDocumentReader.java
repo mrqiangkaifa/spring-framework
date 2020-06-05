@@ -200,6 +200,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		/**
 		 * Bean定义的Document对象使用了Spring默认的XML命名空间
 		 */
+		//todo．对默认bean的处理，即获取的节点的URI中包含http://www.springframework.org/schema/beans
 		if (delegate.isDefaultNamespace(root)) {
 			/**
 			 * 获取Bean定义的Document对象根元素的所有子节点
@@ -246,18 +247,21 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 */
 	private void parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate) {
 
+		//todo.对import标签的处理
 		if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) {
 			/**
 			 * 如果元素节点是<Import>导入元素，进行导入解析
 			 */
 			importBeanDefinitionResource(ele);
 		}
+		//todo.对alias标签的处理
 		else if (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) {
 			/**
 			 * 如果元素节点是<Alias>别名元素，进行别名解析
 			 */
 			processAliasRegistration(ele);
 		}
+		//todo.对bean标签的处理
 		else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) {
 			/**
 			 * 元素节点既不是导入元素，也不是别名元素，即普通的<Bean>元素，
@@ -265,6 +269,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			 */
 			processBeanDefinition(ele, delegate);
 		}
+		//todo.对beans标签的处理
 		else if (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) {
 			/**
 			 * Beans标签
@@ -290,7 +295,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			return;
 		}
 		/**
-		 * 使用系统变量值解析location属性值
+		 * 使用系统变量值解析location属性值 解析系统属性，格式如：“${user.dir}”
 		 */
 		// Resolve system properties: e.g. "${user.dir}"
 		location = getReaderContext().getEnvironment().resolveRequiredPlaceholders(location);
@@ -298,6 +303,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		Set<Resource> actualResources = new LinkedHashSet<>(4);
 		/**
 		 * 标识给定的导入元素的location是否是绝对路径
+		 * 判断Location是决定URI还是URL
 		 */
 		// Discover whether the location is an absolute or relative URI
 		boolean absoluteLocation = false;
@@ -310,8 +316,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		}
 		/**
 		 * 给定的导入元素的location是绝对路径
+		 * 如果是绝对路径，则直接根据地址解析对应的配置
 		 */
 		// Absolute or relative?
+
 		if (absoluteLocation) {
 			try {
 				int importCount = getReaderContext().getReader().loadBeanDefinitions(location, actualResources);
@@ -328,12 +336,14 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			/**
 			 * 给定的导入元素的location是相对路径
 			 */
+			//todo．如果是相时地址则根据相对地址计算出绝对地址
 			// No URL -> considering resource location as relative to the current file.
 			try {
 				int importCount;
 				/**
 				 * 将给定导入元素的location封装为相对路径资源
 				 */
+				//todo.前面提到Resource存在多个子类，而每个子类的createRelative方式实现都是不一样的，所以这里先使用子类的方法尝试
 				Resource relativeResource = getReaderContext().getResource().createRelative(location);
 				/**
 				 * 封装的相对路径资源存在
@@ -344,9 +354,11 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				}
 				else {
 					/**
+					 * 如果解析不成功那么使用默认的ResourcePatternResolver进行解析
 					 * 封装的相对路径资源不存在
 					 * 获取Spring IoC容器资源读入器的基本路径
 					 */
+
 					String baseLocation = getReaderContext().getResource().getURL().toString();
 					/**
 					 * 根据Spring IoC容器资源读入器的基本路径加载给定导入路径的资源
@@ -370,6 +382,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		/**
 		 * 在解析完<Import>元素之后，发送容器导入其他资源处理完成事件
 		 */
+		//todo.解析完成之后通知监听器进行处理
 		getReaderContext().fireImportProcessed(location, actResArray, extractSource(ele));
 	}
 
@@ -430,14 +443,24 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		/**
 		 * BeanDefinitionHolder是对BeanDefinition的封装，即Bean定义的封装类
 		 * 对Document对象中<Bean>元素的解析由BeanDefinitionParserDelegate实现
+		 * 进行元素解断返回BeanDefinitionHolder类型的实例bdHolder,经过这个方法之后,bdHolder对象已经包含了配置文件中的各种属性,比class, name, id, alias
 		 */
+		//todo.进行元素解断返回BeanDefinitionHolder类型的实例bdHolder,经过这个方法之后,bdHolder对象已经包含了配置文件中的各种属性,比class, name, id, alias
 		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
 		if (bdHolder != null) {
+			/**
+			 * 当返回的bdHolder不为空的情况下若存在默认存在的子节点下再有自定义属件，还需要再次对自定义标签进行解析
+			 * <bean   id="test"  class="">
+			 *   <mybean:user  username="aaa"/>
+			 * </bean>
+			 */
+			//todo.当返回的bdHolder不为空的情况下若存在默认存在的子节点下再有自定义属件，还需要再次对自定义标签进行解析
 			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
 			try {
 				/**
 				 * 向Spring IoC容器注册解析得到的Bean定义，这是Bean定义向IoC容器注册的入口
 				 */
+				//todo.解析完成之后,需要对解析dHolder进行注册,同样,注册操作委托给了BeanDefinitionReaderutils的registerBeanDefinition方法
 				// Register the final decorated instance.
 				BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
 			}
@@ -448,6 +471,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			/**
 			 * 在完成向Spring IoC容器注册解析得到的Bean定义之后，发送注册事件
 			 */
+			//todo.最后发出响应时间，通知相关的监听器，这个bean已经加载完成了
 			// Send registration event.
 			getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));
 		}

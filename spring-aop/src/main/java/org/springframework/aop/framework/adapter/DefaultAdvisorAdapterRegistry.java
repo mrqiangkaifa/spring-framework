@@ -66,15 +66,18 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 		/**
 		 * 如果通知对象是通知器类型，则不用封装
 		 */
+		//todo 如果需要封装的对象---是---Advisor类型就不需要处理
 		if (adviceObject instanceof Advisor) {
 			return (Advisor) adviceObject;
 		}
+		//todo 此方法值对Advisor和Advice类型两种数据进行封装，如果不知就不能封装
 		if (!(adviceObject instanceof Advice)) {
 			throw new UnknownAdviceTypeException(adviceObject);
 		}
 		/**
 		 * 如果通知是方法拦截器
 		 */
+		//todo 如果需要封装的对象---是---MethodInterceptor类型，则使用DefaultPointcutAdvisor,不需要适配
 		Advice advice = (Advice) adviceObject;
 		if (advice instanceof MethodInterceptor) {
 			/**
@@ -83,10 +86,12 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 			// So well-known it doesn't even need an adapter.
 			return new DefaultPointcutAdvisor(advice);
 		}
+		//todo 如果是Advisor的适配器那么也同样需要进行封装
 		for (AdvisorAdapter adapter : this.adapters) {
 			/**
 			 * 检查通知适配器是否支持给定的通知
 			 */
+			//todo 检查是否是支持适配的类型
 			// Check that it is supported.
 			if (adapter.supportsAdvice(advice)) {
 				return new DefaultPointcutAdvisor(advice);

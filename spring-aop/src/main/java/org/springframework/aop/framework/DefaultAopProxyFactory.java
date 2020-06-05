@@ -55,6 +55,18 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 	 */
 	@Override
 	public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
+		//todo 在这里判断代理的设置属性，
+		// optimize：代理是否应该执行积极的优化，默认为false
+		// proxyTargetClass：是否直接代理目标类以及任何接口
+		// hasNoUserSuppliedProxyInterfaces: 判断是否又用户提供的代理接口
+		// (1)optimize: 用来控制通过CGLIB创建的代理是否使用激进的优化策略，除非完全了解AOP如何进行优化的，则不应该设置这个值（这个值只对CGLIB代理方法有用）</br>
+		// (2)proxyTargetClass: 这个属性为true时，目标类本身被代理而不是目标类的接口，如果这个属性值被设置为true，则使用CGLIB</br>
+		// (3)hasNoUserSuppliedProxyInterfaces：是否存在用户自定义的代理的接口</br>
+		// 如果目标实现了接口，可以使用JDK代理（默认），也可以强制使用CGLIB方法进行代理的创建，如果目标对象没有实现接口，则必须使用CGLIB库。</br>
+		// JDK动态代理只能对实现了接口的类生成代理，而不能针对类。</br>
+		// CGLIB是针对类实现代理，主要是对指定的类生成一个子类，覆盖其中的方法，因为是继承，所以这个类或方法最好不要声明为final类型的。</br>
+		// 对于JDK的动态代理使用，我们需要自定义一个类实现InvocationHandler，并实现其中需要重写的3个函数：1.构造函数，将代理的对象传入；2.invoke方法，此方法中实现了AOP增强的所有逻辑；3.getProxy方法。同理spring使用JDK的动态代理同样需要用这种方式，因此JdkDynamicAopProxy类实现了InvocationHandler类并且会在invoke方法中把AOP的核心逻辑写在其中
+		//
 		/**
 		 * 如果AOP使用显式优化，或者配置了目标类，或者只使用Spring支持的代理接口
 		 */
@@ -70,12 +82,14 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 			/**
 			 * 如果配置的AOP目标类是接口，则使用JDK动态代理机制来生成AOP代理
 			 */
+			//todo 如果需要代理的类是接口则使用jdk代理
 			if (targetClass.isInterface() || Proxy.isProxyClass(targetClass)) {
 				return new JdkDynamicAopProxy(config);
 			}
 			/**
 			 * 如果AOP配置的目标类不是接口，则使用CGLIB的方式来生成AOP代理
 			 */
+			//todo 使用cglib代理方式
 			return new ObjenesisCglibAopProxy(config);
 		}
 		else {

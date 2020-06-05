@@ -319,7 +319,9 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 		if (logger.isTraceEnabled()) {
 			logger.trace("Loading XML bean definitions from " + encodedResource);
 		}
-
+		/**
+		 * 通过属性来记录已经加载过的资源
+		 */
 		Set<EncodedResource> currentResources = this.resourcesCurrentlyBeingLoaded.get();
 		if (currentResources == null) {
 			currentResources = new HashSet<>(4);
@@ -330,15 +332,27 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 					"Detected cyclic loading of " + encodedResource + " - check your import definitions!");
 		}
 		try {
+			/**
+			 * 从encodedResource中获取已经编码封装的Resource对象并再次从Resource中获取inputStream
+			 */
 			InputStream inputStream = encodedResource.getResource().getInputStream();
 			try {
+				/**
+				 * InputSource这个类并不是来自Spring，他的全路径是org.xml.sax.inputStream
+				 */
 				InputSource inputSource = new InputSource(inputStream);
 				if (encodedResource.getEncoding() != null) {
 					inputSource.setEncoding(encodedResource.getEncoding());
 				}
+				/**
+				 * 进入逻辑核心部分
+				 */
 				return doLoadBeanDefinitions(inputSource, encodedResource.getResource());
 			}
 			finally {
+				/**
+				 * 关闭输入流
+				 */
 				inputStream.close();
 			}
 		}
@@ -524,6 +538,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 		/**
 		 * 得到BeanDefinitionDocumentReader来对xml格式的BeanDefinition解析
 		 */
+		//todo.使用DefaultBeanDefinitionDocumentReader实例化BeanDefinitionDocumentReader
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
 		/**
 		 * 获得容器中注册的Bean数量

@@ -1,9 +1,12 @@
 package org.example;
 
 import org.example.test.AServiceImpl;
+import org.example.test.Car;
 import org.example.test.IBaseService;
 import org.example.test.Person;
+import org.example.wukongelement.User;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.context.support.StaticMessageSource;
 
@@ -17,8 +20,10 @@ import java.lang.reflect.Method;
 public class App 
 {
     public static void main( String[] args ) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-		ApplicationContext context = new FileSystemXmlApplicationContext("D:\\devtools\\workspace\\spring-framework\\spring-analysis-maven\\src\\main\\resources\\simpleContext.xml");
+		ApplicationContext context = new ClassPathXmlApplicationContext("simpleContext.xml");
 		StaticMessageSource staticMessageSource = (StaticMessageSource)context.getBean("someMessageSource");
+		User testUser = (User)context.getBean("testUser");
+		Car testFactoryCar = (Car)context.getBean("car");
 		AServiceImpl  iBaseService = (AServiceImpl)context.getBean(IBaseService.class);
 		Method method = iBaseService.getClass().getDeclaredMethod("Get",Person.class);
 		Person person = new Person();

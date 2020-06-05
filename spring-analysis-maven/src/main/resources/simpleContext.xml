@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "https://www.springframework.org/dtd/spring-beans-2.0.dtd">
 
-<beans>
+<beans xmlns:test="http://www.wukong.org/schema/wukong"
+	   xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+       http://www.wukong.org/schema/wukong http://www.wukong.org/schema/wukong.xsd"
+	   >
 
 	<bean id="someMessageSource" name="yourMessageSource"
 			class="org.springframework.context.support.StaticMessageSource"/>
@@ -15,4 +19,8 @@
 	<bean id="person" class="org.example.test.Person" lazy-init="false">
 		<property name="service" ref="service" />
 	</bean>
+	<bean id="car" class="org.example.test.TestFactoryBean" >
+		<property name="carInfo" value="超级跑车,400,2000000"/>
+	</bean>
+	<test:wukong id="testUser" name="测试" email="111111111@gmail.com"/>
 </beans>

@@ -165,6 +165,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 		/**
 		 * 如果拦截器链中通知已经调用完毕
 		 */
+		//todo 检查是否所有的拦截器方法都执行完了，执行完了之后就调用切点方法
 		// We start with an index of -1 and increment early.
 		if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
 			/**
@@ -176,11 +177,13 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 		/**
 		 * 获取拦截器链中的通知器或通知
 		 */
+		//todo 获取下一个需要执行的拦截器
 		Object interceptorOrInterceptionAdvice =
 				this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
 		/**
 		 * 如果获取的通知器或通知是动态匹配方法拦截器类型
 		 */
+		//todo 如果拦截器是InterceptorAndDynamicMethodMatcher(内部框架类，将MethodInterceptor实例与MethodMatcher组合，用作顾问程序链中的元素)类型的
 		if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
 			/**
 			 * 动态匹配方法拦截器
@@ -190,6 +193,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 			InterceptorAndDynamicMethodMatcher dm =
 					(InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
 			Class<?> targetClass = (this.targetClass != null ? this.targetClass : this.method.getDeclaringClass());
+			//todo 对对应的方法和目标类以及参数进行匹配，如果匹配上则执行拦截方法，不匹配则不执行，调用下一个拦截器
 			if (dm.methodMatcher.matches(this.method, targetClass, this.arguments)) {
 				/**
 				 * 如果匹配，调用拦截器的方法
@@ -209,6 +213,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 			/**
 			 * 如果不是动态匹配方法拦截器，则切入点在构造对象之前进行静态匹配，调用拦截器的方法
 			 */
+			//todo 如果是普通的拦截器，所以我们只是调用它。普通的拦截器有：ExposeInvocationInterceptor，DelegatingIntroductionInterceptor，MethodBeforeAdviceInterceptor，AspectJAroundAdvice，AspectJAfterThrowingAdvice，AspectJAfterAdvice等
 			// It's an interceptor, so we just invoke it: The pointcut will have
 			// been evaluated statically before this object was constructed.
 			return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);

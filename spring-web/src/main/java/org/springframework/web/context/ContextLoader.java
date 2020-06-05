@@ -259,6 +259,10 @@ public class ContextLoader {
 	 * @see #CONFIG_LOCATION_PARAM
 	 */
 	public WebApplicationContext initWebApplicationContext(ServletContext servletContext) {
+		/**
+		 * ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE = WebApplicationContext.class.getName() + ".ROOT";
+		 * 判断在Servlet上下文中Spring Web应用给根上下文是否已经存在
+		 */
 		if (servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE) != null) {
 			throw new IllegalStateException(
 					"Cannot initialize context because there is already a root application context present - " +
@@ -292,12 +296,25 @@ public class ContextLoader {
 					configureAndRefreshWebApplicationContext(cwac, servletContext);
 				}
 			}
+			/**
+			 * 将创建的Web应用上下文设置到Servlet上下文的应用根容器属性中
+			 */
 			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.context);
-
+			/**
+			 * 获取当前线程的容器类加载器
+			 */
 			ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+			/**
+			 * 如果当前线程的容器类加载器是ContextLoader类，则当前上下文就设置为
+			 * 创建的Web应用上下文
+			 */
 			if (ccl == ContextLoader.class.getClassLoader()) {
 				currentContext = this.context;
 			}
+			/**
+			 * 如果当前线程的容器类加载器不为null，则将创建的web应用上下文和其类
+			 * 加载器缓存在容器类加载器—>Web应用上下文Map集合中
+			 */
 			else if (ccl != null) {
 				currentContextPerThread.put(ccl, this.context);
 			}
@@ -329,15 +346,27 @@ public class ContextLoader {
 	 * @see ConfigurableWebApplicationContext
 	 */
 	protected WebApplicationContext createWebApplicationContext(ServletContext sc) {
+		/**
+		 * 获取当前Servlet上下文接口的实现类
+		 */
 		Class<?> contextClass = determineContextClass(sc);
+		/**
+		 * 判断使用什么样的的类在Web容器中作为IoC容器
+		 */
 		if (!ConfigurableWebApplicationContext.class.isAssignableFrom(contextClass)) {
 			throw new ApplicationContextException("Custom context class [" + contextClass.getName() +
 					"] is not of type [" + ConfigurableWebApplicationContext.class.getName() + "]");
 		}
+		/**
+		 * Servlet上下文实现类是ConfigurableWebApplicationContext类型，
+		 * 使用JDK反射机制，调用Servlet上下文实现类的无参构造方法创建实例对象
+		 */
 		return (ConfigurableWebApplicationContext) BeanUtils.instantiateClass(contextClass);
 	}
 
 	/**
+	 * 根据给定的Servlet上下文，获取Spring Web上下文的实现类XmlWebApplicationContext或者用户自定义的Spring Web应用上下文
+	 *
 	 * Return the WebApplicationContext implementation class to use, either the
 	 * default XmlWebApplicationContext or a custom context class if specified.
 	 * @param servletContext current servlet context
@@ -346,9 +375,18 @@ public class ContextLoader {
 	 * @see org.springframework.web.context.support.XmlWebApplicationContext
 	 */
 	protected Class<?> determineContextClass(ServletContext servletContext) {
+		/**
+		 * Servlet上下文从web.xml中获取配置的contextClass参数值
+		 */
 		String contextClassName = servletContext.getInitParameter(CONTEXT_CLASS_PARAM);
+		/**
+		 * 如果web.xml中额外配置了contextClass参数值
+		 */
 		if (contextClassName != null) {
 			try {
+				/**
+				 * 使用JDK反射机制，实例化指定名称的contextClass类对象
+				 */
 				return ClassUtils.forName(contextClassName, ClassUtils.getDefaultClassLoader());
 			}
 			catch (ClassNotFoundException ex) {
@@ -356,9 +394,18 @@ public class ContextLoader {
 						"Failed to load custom context class [" + contextClassName + "]", ex);
 			}
 		}
+		/**
+		 * 如果web.xml中没有配置contextClass参数值
+		 */
 		else {
+			/**
+			 * 获取Spring中默认的Web应用上下文策略，即XmlWebApplicationContext
+			 */
 			contextClassName = defaultStrategies.getProperty(WebApplicationContext.class.getName());
 			try {
+				/**
+				 * 使用JDK反射机制，创建Spring Web应用上下文默认策略类对象
+				 */
 				return ClassUtils.forName(contextClassName, ContextLoader.class.getClassLoader());
 			}
 			catch (ClassNotFoundException ex) {
@@ -505,6 +552,8 @@ public class ContextLoader {
 	}
 
 	/**
+	 * 关闭指定Servlet上下文中的Spring Web应用上下文
+	 *
 	 * Close Spring's web application context for the given servlet context.
 	 * <p>If overriding {@link #loadParentContext(ServletContext)}, you may have
 	 * to override this method as well.
@@ -513,18 +562,36 @@ public class ContextLoader {
 	public void closeWebApplicationContext(ServletContext servletContext) {
 		servletContext.log("Closing Spring root WebApplicationContext");
 		try {
+			/**
+			 * Spring Web应用上下文的类型都是ConfigurableWebApplicationContext
+			 */
 			if (this.context instanceof ConfigurableWebApplicationContext) {
+				/**
+				 * 关闭Spring Web应用上下文，释放资源，销毁所有缓存的单态模式Bean
+				 */
 				((ConfigurableWebApplicationContext) this.context).close();
 			}
 		}
 		finally {
+			/**
+			 * 获取当前线程的上下文类加载器
+			 */
 			ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+			/**
+			 * 将当前上下文对象设置为null
+			 */
 			if (ccl == ContextLoader.class.getClassLoader()) {
 				currentContext = null;
 			}
+			/**
+			 * 移除容器类加载器—>Web应用上下文Map集合中中key为指定类加载器的项
+			 */
 			else if (ccl != null) {
 				currentContextPerThread.remove(ccl);
 			}
+			/**
+			 * 移除Servlet上下文中Spring Web根上下文属性
+			 */
 			servletContext.removeAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
 		}
 	}

@@ -73,6 +73,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	protected Object[] getAdvicesAndAdvisorsForBean(
 			Class<?> beanClass, String beanName, @Nullable TargetSource targetSource) {
 
+		//todo 查找符合条条件的代理
 		List<Advisor> advisors = findEligibleAdvisors(beanClass, beanName);
 		if (advisors.isEmpty()) {
 			return DO_NOT_PROXY;
@@ -91,8 +92,11 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 * @see #extendAdvisors
 	 */
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
+		//todo 找到要在自动代理中使用的所有候选代理对象（所有Advisor接口的实现类）
 		List<Advisor> candidateAdvisors = findCandidateAdvisors();
+		//todo 从候选的代理对象中搜索，找到可以应用于指定bean的所有代理，根据切点表达式来判断
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
+		//todo 如果代理类集合不为空的时候，检查所有代理类中是不是包含AspectJ（AspectJ表达式）代理，如果包含则需要把ExposeInvocationInterceptor类作为连接器链的第一个
 		extendAdvisors(eligibleAdvisors);
 		if (!eligibleAdvisors.isEmpty()) {
 			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
@@ -121,11 +125,14 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	protected List<Advisor> findAdvisorsThatCanApply(
 			List<Advisor> candidateAdvisors, Class<?> beanClass, String beanName) {
 
+		//todo 设置当前正在创建代理的beanNAme，ThreadLocal类型的变量
 		ProxyCreationContext.setCurrentProxiedBeanName(beanName);
 		try {
+			//todo 过滤已经得到的advisors
 			return AopUtils.findAdvisorsThatCanApply(candidateAdvisors, beanClass);
 		}
 		finally {
+			//todo 设置当前正在创建代理的beanNAme位null，表示当前线程创建完了，可以下一个
 			ProxyCreationContext.setCurrentProxiedBeanName(null);
 		}
 	}

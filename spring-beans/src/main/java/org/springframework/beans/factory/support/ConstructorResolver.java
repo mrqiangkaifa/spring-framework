@@ -124,40 +124,49 @@ class ConstructorResolver {
 	 */
 	public BeanWrapper autowireConstructor(String beanName, RootBeanDefinition mbd,
 			@Nullable Constructor<?>[] chosenCtors, @Nullable Object[] explicitArgs) {
-
+		//todo 先实例化一个BeanWrapperImpl类对象
 		BeanWrapperImpl bw = new BeanWrapperImpl();
+		//todo 这里的beanFactory是初始化ConstructorResolver构造器的时候在AbstractAutowireCapableBeanFactory类的autowireConstructor方法中传进来的就是AbstractAutowireCapableBeanFactory
 		this.beanFactory.initBeanWrapper(bw);
 
 		Constructor<?> constructorToUse = null;
 		ArgumentsHolder argsHolderToUse = null;
 		Object[] argsToUse = null;
-
+		//todo 如果构造参数不为空就直接使用
 		if (explicitArgs != null) {
 			argsToUse = explicitArgs;
 		}
 		else {
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
+				//todo 获取已缓存解析的构造函数或工厂方法（resolvedConstructorOrFactoryMethod----用于缓存已解析的构造函数或工厂方法）
 				constructorToUse = (Constructor<?>) mbd.resolvedConstructorOrFactoryMethod;
+				//todo 如果缓存不为空，并且构造参数已经解析缓存了，(constructorArgumentsResolved为包可见，用于表示构造参数状态是否已经解析)
 				if (constructorToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached constructor...
+					//todo 获取缓存的构造函数（resolvedConstructorArguments---用于缓存完全解析的构造函数参数的包可见字段）
 					argsToUse = mbd.resolvedConstructorArguments;
 					if (argsToUse == null) {
+						//todo 如果获取到的缓存的构造参数是空，就获取缓存的部分准备的构造函数参数（preparedConstructorArguments---用于缓存部分准备的构造函数参数的包可见字段）
 						argsToResolve = mbd.preparedConstructorArguments;
 					}
 				}
 			}
+			//todo 如果缓存的参数不是空，就进行解析，解析时会对argsToResolve中的每个的类型进行转化，也是一个复杂的逻辑
 			if (argsToResolve != null) {
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, constructorToUse, argsToResolve, true);
 			}
 		}
 
+		//todo 如果缓存的构造器不存在，就说明没有bean进行过解析，需要去关联对应的bean的构造器
 		if (constructorToUse == null || argsToUse == null) {
 			// Take specified constructors, if any.
 			Constructor<?>[] candidates = chosenCtors;
+			//todo 如果传入的构造器为空，则获取bean的Class对象，然后根据bean是不是public修饰的来按照不同的方式获取所有的构造器
 			if (candidates == null) {
 				Class<?> beanClass = mbd.getBeanClass();
 				try {
+					//todo getDeclaredConstructors返回所有的构造器（包括public和private修饰的），getConstructors返回public修饰的
 					candidates = (mbd.isNonPublicAccessAllowed() ?
 							beanClass.getDeclaredConstructors() : beanClass.getConstructors());
 				}
@@ -181,29 +190,35 @@ class ConstructorResolver {
 				}
 			}
 
+			//todo 如果传入的构造器不是空的，那么就获取bean的注入模式，如果是空就按照构造器注入方式注入
 			// Need to resolve the constructor.
 			boolean autowiring = (chosenCtors != null ||
+					//todo getResolvedAutowireMode方法逻辑是，如果是自适应注入方法就看有没有无参构造器，如果存在就按照type类型注入，如果不存在就按照构造器方式注入，如果没有设置注入方式就不注入
 					mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 			ConstructorArgumentValues resolvedValues = null;
 
 			int minNrOfArgs;
+			//todo 传入的构造参数不为空，这种构造器最小参数个数个传入的个数
 			if (explicitArgs != null) {
 				minNrOfArgs = explicitArgs.length;
 			}
 			else {
+				//todo 如果传的构造参数是空的，则从RootBeanDefinition中获取构造器参数，并解析对应的构造参数然后添加到ConstructorArgumentValues中
 				ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 				resolvedValues = new ConstructorArgumentValues();
 				minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
 			}
 
+			//todo 按照访问方式和数量对构造器进行排序；public>protect>private，在同为public时构造器多的排在前面
 			AutowireUtils.sortConstructors(candidates);
 			int minTypeDiffWeight = Integer.MAX_VALUE;
 			Set<Constructor<?>> ambiguousConstructors = null;
 			LinkedList<UnsatisfiedDependencyException> causes = null;
-
+			//todo 遍历排序后的构造器
 			for (Constructor<?> candidate : candidates) {
 				Class<?>[] paramTypes = candidate.getParameterTypes();
 
+				//todo 按照参数个数和构造器的参数类型个数进行比较，如果相等就用这个构造器
 				if (constructorToUse != null && argsToUse != null && argsToUse.length > paramTypes.length) {
 					// Already found greedy constructor that can be satisfied ->
 					// do not look any further, there are only less greedy constructors left.
@@ -214,15 +229,21 @@ class ConstructorResolver {
 				}
 
 				ArgumentsHolder argsHolder;
+				//todo 没有找到合适的构造器就进行下面的步骤
+				// 如果ConstructorArgumentValues不为空就说明有构造参数
 				if (resolvedValues != null) {
 					try {
+						//todo 获取有ConstructorProperties标签的参数，因为上面有判断是否可以被加载，所这里直接能够拿到贴了标签的构造参数名称
+						// ConstructorProperties标签的作用=======》构造函数上的注释，显示该构造函数的参数如何与构造对象的getter方法相对应
 						String[] paramNames = ConstructorPropertiesChecker.evaluate(candidate, paramTypes.length);
+						//todo 如果paramNames是空，则说明参数没有被获取到，则在beanFactory中获取用于获取方法参数的ParameterNameDiscoverer对象，然后获取参数名称
 						if (paramNames == null) {
 							ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
 							if (pnd != null) {
 								paramNames = pnd.getParameterNames(candidate);
 							}
 						}
+						//todo 根据获取到的参数名和已经查到的构造参数和构造参数类型来创建用户创建构造器用的构造参数数组，这个数组中包含了原始的参数列表和构造后的参数列表，用来对比用
 						argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames,
 								getUserDeclaredConstructor(candidate), autowiring, candidates.length == 1);
 					}
@@ -246,6 +267,8 @@ class ConstructorResolver {
 					argsHolder = new ArgumentsHolder(explicitArgs);
 				}
 
+				//todo 如果是宽松的构造策略，则对比spring构造的参数数组的类型和获取到的构造器参数的参数类型进行对比，返回不同的个数
+				// 如果是严格的构造策略，则检查能否将构造的参数数组赋值到构造器参数的参数列表中
 				int typeDiffWeight = (mbd.isLenientConstructorResolution() ?
 						argsHolder.getTypeDifferenceWeight(paramTypes) : argsHolder.getAssignabilityWeight(paramTypes));
 				// Choose this constructor if it represents the closest match.
@@ -298,6 +321,7 @@ class ConstructorResolver {
 			String beanName, RootBeanDefinition mbd, Constructor<?> constructorToUse, Object[] argsToUse) {
 
 		try {
+			//todo 下面步骤都是一样的，用上面得到的构造器（无论是从bean对象中获取的还是spring自己构建的）和参数来反射创建bean实例，并放到BeanWrapperImpl对象中然后返回
 			InstantiationStrategy strategy = this.beanFactory.getInstantiationStrategy();
 			if (System.getSecurityManager() != null) {
 				return AccessController.doPrivileged((PrivilegedAction<Object>) () ->

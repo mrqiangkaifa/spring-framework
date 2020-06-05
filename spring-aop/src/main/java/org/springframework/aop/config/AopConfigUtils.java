@@ -120,22 +120,37 @@ public abstract class AopConfigUtils {
 
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 
+		//todo 方法containsBeanDefinition作用判断出给的bean是否存在,在Spring的中所有的beanDefinition都已经被存储在了一个ConcurrentHashMap中，
+		// 如果已经存在了自动代理创建其且存在的自动代理创建器与现在的不一致那么需要根据优先级来判断到底需要哪一个
 		if (registry.containsBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME)) {
+			//todo 如果存在就获取对应的BeanDefinition
 			BeanDefinition apcDefinition = registry.getBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME);
+			//todo 判断需要注册的Bean的Class是不是就是刚刚从内存中获取到的BeanDefinition的class，如果不是则需要进行不同的Class的优先级的判断。在BeanDefinition中的className可以使子类的class，不一定是运行时的class
 			if (!cls.getName().equals(apcDefinition.getBeanClassName())) {
+				//todo findPriorityForClass方法用来寻找需要代理对象的优先级，对应的优先级已经被初始化在了一个List<Class>里面，通过比较class来获取优先级
+				// 根据Bean的名称来找到当前代理器的优先级
 				int currentPriority = findPriorityForClass(apcDefinition.getBeanClassName());
+				//todo 获取需要被代理对象的代理优先级
+				// 根据传进来的ClassName来找到对应的优先级
 				int requiredPriority = findPriorityForClass(cls);
+				//todo 如果缓存起来的class的优先级小于当前需要被注册的bean 对应的class的优先级，那么就把已经缓存起来的bean的class缓存穿进来的class
+				// 如果当前代理器的优先级小于需要注册的处理器的优先级，就改变bean的className属性
 				if (currentPriority < requiredPriority) {
+					//todo 改变bean最重要的就是改变bean所对应的className属性
 					apcDefinition.setBeanClassName(cls.getName());
 				}
 			}
+			//todo 如果已经存在自动代理创建器并且与将要创建的一致，那么无需再次创建
 			return null;
 		}
 
+		//todo 将最后需要设置的class，这知道BeanDefinition的className中
 		RootBeanDefinition beanDefinition = new RootBeanDefinition(cls);
 		beanDefinition.setSource(source);
+		//todo 这个order属性表示的是，当有多个修饰方法需要执行的时候，用这个order来保持顺序
 		beanDefinition.getPropertyValues().add("order", Ordered.HIGHEST_PRECEDENCE);
 		beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
+		//todo 注册bean到beanDefinition中，（前面讲过注册之后会保存起来的）
 		registry.registerBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME, beanDefinition);
 		return beanDefinition;
 	}

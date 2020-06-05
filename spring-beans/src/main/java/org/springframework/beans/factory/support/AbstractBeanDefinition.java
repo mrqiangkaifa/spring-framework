@@ -63,6 +63,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 * Constant for the default scope name: {@code ""}, equivalent to singleton
 	 * status unless overridden from a parent bean definition (if applicable).
 	 */
+
 	public static final String SCOPE_DEFAULT = "";
 
 	/**
@@ -140,66 +141,82 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	@Nullable
 	private volatile Object beanClass;
-
+	//todo bean的作用范围，对应bean属性的scope
 	@Nullable
 	private String scope = SCOPE_DEFAULT;
-
+	//todo 是否是抽象，对应bean属性的abstract
 	private boolean abstractFlag = false;
-
+	//todo 是否延迟加载，对应bean属性lazy-init
 	@Nullable
 	private Boolean lazyInit;
-
+	//todo 自动注入模式，对应bean属性的autowire
 	private int autowireMode = AUTOWIRE_NO;
-
+	//todo 以来检查，spring3.0后启用这个属性
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
-
+	//todo 用来表示一个bean的实例化依靠另外一个bean先实例化，对应bean属性depend-on
 	@Nullable
 	private String[] dependsOn;
-
+	//todo autowire-candidate属性设置为false，这样容器在查找自动装配对象时候，将不考虑该bean，也就是他不会被考虑作为其他bean自动装配的候选者，
+	// 但是该bean本身还是可以使自动装配来注入其他bean的
 	private boolean autowireCandidate = true;
-
+	//todo 自动装配时当出现多个bean候选者时，将作为首选，对应bean属性的primary
 	private boolean primary = false;
-
+	//todo 用于记录Qualifier，对应子元素的qualifiers，当自动注入的时候有相同的类型的bean时候，可以用Qualifier来指定注入的bean
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
 	@Nullable
 	private Supplier<?> instanceSupplier;
-
+	//todo 允许访问非公开的构造器和方法，程序可以设置
 	private boolean nonPublicAccessAllowed = true;
+//todo 是否以一种宽松的模式解析构造函数，默认为true
+	/**
+	 如果为false，则在如下情况
+	 interface MyTest{}
+	 class MyTestImpl implements MyTest{}
 
+	 class Main{
+	 Main(MyTest i){}
+	 Main(MyTestImpl i){}
+	 }
+	 抛出异常，因为Spring无法准确定位那个构造器
+	 */
 	private boolean lenientConstructorResolution = true;
-
+	/**  对应bean属性factory-bean
+	 * 用法
+	 *<bean id=''instanceFactoryBean" class="com.MyTestBean">
+	 *<bean id=''currentTime" factory-bean="instanceFactoryBean" factory-method="createTime"  >
+	 */
 	@Nullable
 	private String factoryBeanName;
-
+	//todo 对应bean属性factory-method
 	@Nullable
 	private String factoryMethodName;
-
+	//todo 记录构造函数注入属性  ，对应bean属性construct-arg
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
-
+	//todo 普通属性集合
 	@Nullable
 	private MutablePropertyValues propertyValues;
-
+	//todo 方法重写的持有者，记录lookup-method，replace-method元素
 	private MethodOverrides methodOverrides = new MethodOverrides();
-
+	//todo 初始化方法，对应bean属性init-method
 	@Nullable
 	private String initMethodName;
-
+	//todo 销毁方法。对应bean属性destroy-method
 	@Nullable
 	private String destroyMethodName;
-
+	//todo 是否执行init-method，程序设置
 	private boolean enforceInitMethod = true;
-
+	//todo 是否执行destroy-method，程序设置
 	private boolean enforceDestroyMethod = true;
-
+	//todo 是否是用户定义的而不是应用程序本身定义，创建AOP时候为true，程序设置
 	private boolean synthetic = false;
-
+	//todo 定义这个bean的应用，APPLICATION：用户，INFARSTRUCTURE；
 	private int role = BeanDefinition.ROLE_APPLICATION;
-
+	//todo bean的描述信息
 	@Nullable
 	private String description;
-
+	//todo 这个bean定义的资源
 	@Nullable
 	private Resource resource;
 
