@@ -277,22 +277,28 @@ public class ContextLoader {
 		long startTime = System.currentTimeMillis();
 
 		try {
+			//todo 如果WebApplicationContext还是null，一般使用web.xml的形式配置的时候，值会为null，这时候使用的是ContextLoaderListener的默认的空构造器
 			// Store context in local instance variable, to guarantee that
 			// it is available on ServletContext shutdown.
 			if (this.context == null) {
 				this.context = createWebApplicationContext(servletContext);
 			}
+			//todo 如果WebApplicationContext是ConfigurableWebApplicationContext类型的时候会进行一些处理
 			if (this.context instanceof ConfigurableWebApplicationContext) {
 				ConfigurableWebApplicationContext cwac = (ConfigurableWebApplicationContext) this.context;
+				//todo 如果此时的上下文还没有激活，第一次进来的时候是没有激活的即false，当上下文刷新之后，这个值回时true
 				if (!cwac.isActive()) {
 					// The context has not yet been refreshed -> provide services such as
 					// setting the parent context, setting the application context id, etc
 					if (cwac.getParent() == null) {
 						// The context instance was injected without an explicit parent ->
 						// determine parent for root web application context, if any.
+						//todo 为null
 						ApplicationContext parent = loadParentContext(servletContext);
 						cwac.setParent(parent);
 					}
+					//todo 配置并刷新上下文，会把servletContext中的一些属性放到spring的上下文中，
+					// 例如如果我们配置了的servlet的initParam参数会被获取
 					configureAndRefreshWebApplicationContext(cwac, servletContext);
 				}
 			}
@@ -315,6 +321,7 @@ public class ContextLoader {
 			 * 如果当前线程的容器类加载器不为null，则将创建的web应用上下文和其类
 			 * 加载器缓存在容器类加载器—>Web应用上下文Map集合中
 			 */
+			//todo 将上下文存储在本地实例变量中，以保证它在ServletContext关闭时可用
 			else if (ccl != null) {
 				currentContextPerThread.put(ccl, this.context);
 			}
@@ -445,6 +452,8 @@ public class ContextLoader {
 		}
 
 		customizeContext(sc, wac);
+		//todo 前面做的是为上下文刷新之前的做的准备，比如设置ServletContext到spring的上下文中，获取
+		// 刷新上下文
 		wac.refresh();
 	}
 

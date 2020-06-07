@@ -500,14 +500,23 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>May be overridden in subclasses in order to initialize further strategy objects.
 	 */
 	protected void initStrategies(ApplicationContext context) {
+		//todo 初始化解析文件相关的MultipartResolver，寻找对应的bean，然后保存
 		initMultipartResolver(context);
+		//todo 初始化区域解析用的LocaleResolver，寻找对应的bean，然后保存
 		initLocaleResolver(context);
+		//todo 初始化解析主题用的ThemeResolver，寻找对应的bean，然后保存
 		initThemeResolver(context);
+		//todo 初始化handlerMapping，逻辑就是找到容器中所有的HandlerMapping类型的bean然后放到一个集合中
 		initHandlerMappings(context);
+		//todo 初始化HandlerAdapter，逻辑就是找到容器中所有的HandlerAdapter类型的bean然后放到一个集合中
 		initHandlerAdapters(context);
+		//todo 初始化HandlerExceptionResolver，逻辑跟上面的一样寻找HandlerExceptionResolver类型的bean，然后保存
 		initHandlerExceptionResolvers(context);
+		//todo 初始化请求视图（url）转化为本地试图(url)的RequestToViewNameTranslator，寻找对应的bean，然后保存
 		initRequestToViewNameTranslator(context);
+		//todo 初始化ViewResolver试图解析器，逻辑跟上面的一样寻找ViewResolver类型的bean，然后保存
 		initViewResolvers(context);
+		//todo 初始化FlashMapManager，用来管理FlashMap（保存两个视图url之间的关系，在用direct的时候会用到）
 		initFlashMapManager(context);
 	}
 
@@ -910,14 +919,19 @@ public class DispatcherServlet extends FrameworkServlet {
 	protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		logRequest(request);
 
+		//todo 如果是一个include请求，<jsp:incluede page="xxx.jsp"/> 这种中，可能在一个请求（A）中嵌套了另外的一个请求(B)，因此需要备份当前请求(A)
 		// Keep a snapshot of the request attributes in case of an include,
 		// to be able to restore the original attributes after the include.
 		Map<String, Object> attributesSnapshot = null;
+		//todo 是否是一个include请求，通过request中的javax.servlet.include.request_uri属性判断，JSP在运行期间是会被编译成相应的Servlet类来运行的，
+		// 所以在Servlet中也会有类似的功能和调用语法，这就是RequestDispatch.include()方法,在一个被别的servlet使用RequestDispatcher的include方法调用过的servlet中，
+		// 如果它想知道那个调用它的servlet的上下文信息该怎么办呢，那就可以通过request中的attribute中的如下属性获取：javax.servlet.include.request_uri
 		if (WebUtils.isIncludeRequest(request)) {
 			attributesSnapshot = new HashMap<>();
 			Enumeration<?> attrNames = request.getAttributeNames();
 			while (attrNames.hasMoreElements()) {
 				String attrName = (String) attrNames.nextElement();
+				//todo 获取包含的请求中的获取A请求的内部B请求设定的spring的策略
 				if (this.cleanupAfterInclude || attrName.startsWith(DEFAULT_STRATEGIES_PREFIX)) {
 					attributesSnapshot.put(attrName, request.getAttribute(attrName));
 				}
@@ -925,13 +939,20 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		// Make framework objects available to handlers and view objects.
+		//todo 设置web应用上下文到请求中，
 		request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
+		//todo 设置本地解析器
 		request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE, this.localeResolver);
+		//todo 设置主题解析器
 		request.setAttribute(THEME_RESOLVER_ATTRIBUTE, this.themeResolver);
+		//todo 设置主题，如果没有设置则为null,默认的为WebApplicationContext
 		request.setAttribute(THEME_SOURCE_ATTRIBUTE, getThemeSource());
 
+		//todo 将request跟response保存到一个FlashMap中，FlashMap用来将一个请求跟另外一个请求关联起来，通常在redirect的时候有用
 		if (this.flashMapManager != null) {
+			//todo 如果当前请求的FlashMap在之前的请求中保存过了，则取出来，并去除对应的缓存
 			FlashMap inputFlashMap = this.flashMapManager.retrieveAndUpdate(request, response);
+			//todo 保存FlashMap到属性中
 			if (inputFlashMap != null) {
 				request.setAttribute(INPUT_FLASH_MAP_ATTRIBUTE, Collections.unmodifiableMap(inputFlashMap));
 			}
@@ -940,9 +961,11 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		try {
+			//todo 进行请求分发处理
 			doDispatch(request, response);
 		}
 		finally {
+			//todo 在FrameworkServlet中会生成WebAsyncManager
 			if (!WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
 				// Restore the original attribute snapshot, in case of an include.
 				if (attributesSnapshot != null) {
@@ -1002,6 +1025,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		HandlerExecutionChain mappedHandler = null;
 		boolean multipartRequestParsed = false;
 
+		//todo 从request中获取WebAsyncManager
 		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
 
 		try {
@@ -1009,51 +1033,66 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				//todo 检查是不是multipart请求并将请求转化为MultipartHttpServletRequest类型的
 				processedRequest = checkMultipart(request);
+				//todo 如果请求不是原来的request请求，则表示是multipart请求并且解析过的
 				multipartRequestParsed = (processedRequest != request);
 
+				//todo 获取封装了HandlerInterceptor的HandlerExecutionChain
 				// Determine handler for the current request.
 				mappedHandler = getHandler(processedRequest);
+				//todo 如果不存在对应的处理链则返回
 				if (mappedHandler == null) {
 					noHandlerFound(processedRequest, response);
 					return;
 				}
 
+				//todo 从HandlerExecutionChain中获取Handler然后寻找合适的HandlerAdapter
 				// Determine handler adapter for the current request.
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
+				//todo 检查是不是GET请求
 				// Process last-modified header, if supported by the handler.
 				String method = request.getMethod();
 				boolean isGet = "GET".equals(method);
 				if (isGet || "HEAD".equals(method)) {
+					//todo 检查当前的get类型的请求的最后修改时间是不是存在的，这个参数用来减少数据传输用
 					long lastModified = ha.getLastModified(request, mappedHandler.getHandler());
+					//todo 如果浏览器请求中的最后请求时间跟服务器的最后修改时间一致，并且是get类型请求则直接返回。关于lastModified这个会说明
 					if (new ServletWebRequest(request, response).checkNotModified(lastModified) && isGet) {
 						return;
 					}
 				}
 
+				//todo 调用mappedHandler中拦截器的applyPreHandle方法，如果对应的请求不符合规则则直接返回
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
 
+				//todo 执行对应的HandlerAdapter的Handler方法，拿到对应的视图
 				// Actually invoke the handler.
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
+				//todo 检查当前的请求是否正在异步处理，如果是的则直接放弃并返回
 				if (asyncManager.isConcurrentHandlingStarted()) {
 					return;
 				}
 
+				//todo 如果处理的结果返回的视图是空的则使用默认的视图，不为空则用处理的结果
 				applyDefaultViewName(processedRequest, mv);
+				//todo 调用applyPostHandle方法对视图进行返回后的处理
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			}
 			catch (Exception ex) {
 				dispatchException = ex;
 			}
 			catch (Throwable err) {
+				//todo 进行错误视图的处理
 				// As of 4.3, we're processing Errors thrown from handler methods as well,
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new NestedServletException("Handler dispatch failed", err);
 			}
+			//todo 对正常视图或者错误视图的处理
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
@@ -1064,13 +1103,16 @@ public class DispatcherServlet extends FrameworkServlet {
 					new NestedServletException("Handler processing failed", err));
 		}
 		finally {
+			//todo 检查当前的请求是否正在异步处理
 			if (asyncManager.isConcurrentHandlingStarted()) {
+				//todo 如果mappedHandler不是null，则调用对应的mappedHandler中的AsyncHandlerInterceptor
 				// Instead of postHandle and afterCompletion
 				if (mappedHandler != null) {
 					mappedHandler.applyAfterConcurrentHandlingStarted(processedRequest, response);
 				}
 			}
 			else {
+				//todo 对流类型的请求，做后置的处理
 				// Clean up any resources used by a multipart request.
 				if (multipartRequestParsed) {
 					cleanupMultipart(processedRequest);

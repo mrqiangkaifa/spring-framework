@@ -76,13 +76,19 @@ class ConditionEvaluator {
 	 * @param metadata the meta data
 	 * @param phase the phase of the call
 	 * @return if the item should be skipped
+	 *
+	 * metadata是AnnotationMetadataReadingVisitor类型的，在5.2版本被SimpleAnnotationMetadataReadingVisitor代替
 	 */
 	public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
+		//todo 检查注解中是否包含@Conditional类型的注解
 		if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
 			return false;
 		}
 
+		//todo 如果没有指定了当前bean是解析还是注册
 		if (phase == null) {
+			//todo bean的注解信息封装对象是AnnotationMetadata类型并且，
+			// 类上有@Component，@ComponentScan，@Import，@ImportResource，则表示为解析类型
 			if (metadata instanceof AnnotationMetadata &&
 					ConfigurationClassUtils.isConfigurationCandidate((AnnotationMetadata) metadata)) {
 				return shouldSkip(metadata, ConfigurationPhase.PARSE_CONFIGURATION);
@@ -91,20 +97,27 @@ class ConditionEvaluator {
 		}
 
 		List<Condition> conditions = new ArrayList<>();
+		//todo 从bean的注解信息封装对象中获取所有的Conditional类型或者Conditional的派生注解
 		for (String[] conditionClasses : getConditionClasses(metadata)) {
 			for (String conditionClass : conditionClasses) {
+				//todo 实例化Conditional中的条件判断类（Condition的子类）
 				Condition condition = getCondition(conditionClass, this.context.getClassLoader());
+				//todo 添加到条件集合中
 				conditions.add(condition);
 			}
 		}
 
+		//todo 根据Condition的优先级进行排序
 		AnnotationAwareOrderComparator.sort(conditions);
 
 		for (Condition condition : conditions) {
 			ConfigurationPhase requiredPhase = null;
+			//todo 如果是ConfigurationCondition类型的Condition
 			if (condition instanceof ConfigurationCondition) {
+				//todo 获取需要对bean进行的操作，是解析还是注册
 				requiredPhase = ((ConfigurationCondition) condition).getConfigurationPhase();
 			}
+			//todo (如果requiredPhase==null或者指定的操作类型是目前阶段的操作类型)并且不符合设置的条件则跳过
 			if ((requiredPhase == null || requiredPhase == phase) && !condition.matches(this.context, metadata)) {
 				return true;
 			}

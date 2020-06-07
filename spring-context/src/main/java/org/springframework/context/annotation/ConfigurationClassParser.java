@@ -218,12 +218,16 @@ class ConfigurationClassParser {
 
 
 	protected void processConfigurationClass(ConfigurationClass configClass) throws IOException {
+		//todo 检查当前解析的配置bean是否包含Conditional注解，如果不包含则不需要跳过
+		// 如果包含了则进行match方法得到匹配结果，如果是符合的并且设置的配置解析策略是解析阶段不需要调过
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
 
+		//todo 从缓存中尝试获取当前配置bean解析之后的ConfigurationClass对象
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
 		if (existingClass != null) {
+			//todo 检查当前这个配置bean是通过@Import标签引入的还是自动注入到另外一个配置类bean里面的
 			if (configClass.isImported()) {
 				if (existingClass.isImported()) {
 					existingClass.mergeImportedBy(configClass);

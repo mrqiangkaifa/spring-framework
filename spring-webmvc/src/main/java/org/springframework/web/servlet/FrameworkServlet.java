@@ -520,14 +520,18 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 */
 	@Override
 	protected final void initServletBean() throws ServletException {
+		//todo 获取ServletContext，打印servlet应用的名称
 		getServletContext().log("Initializing Spring " + getClass().getSimpleName() + " '" + getServletName() + "'");
 		if (logger.isInfoEnabled()) {
 			logger.info("Initializing Servlet '" + getServletName() + "'");
 		}
+		//todo 获取当前系统时间，用于计算初始化的时长
 		long startTime = System.currentTimeMillis();
 
 		try {
+			//todo 初始化web上下文WebApplicationContext
 			this.webApplicationContext = initWebApplicationContext();
+			//todo 框架其他的初始化，这个方法是个空方法，可以子类进行实现
 			initFrameworkServlet();
 		}
 		catch (ServletException | RuntimeException ex) {
@@ -558,16 +562,32 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see #setContextConfigLocation
 	 */
 	protected WebApplicationContext initWebApplicationContext() {
+		//todo 如果用户指定了WebApplicationContext情况下，从ServletContext获取WebApplicationContext,这里获取的属性名是WebApplicationContext.class.getName() + ".ROOT"
 		WebApplicationContext rootContext =
 				WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 		WebApplicationContext wac = null;
 
+		/**
+		 * Servlet WebApplicationContext 容器。它有四种方式进行“创建”
+		 * 方式一：通过构造方法FrameworkServlet(WebApplicationContext webApplicationContext)
+		 * 方式二：因为实现 ApplicationContextAware 接口，也可以 Spring 注入
+		 * @Override
+		 * public void setApplicationContext(ApplicationContext applicationContext)
+		 * 方式三：见 #findWebApplicationContext() 方法。
+		 * 方式四：见 #createWebApplicationContext(WebApplicationContext parent) 方法
+		 */
+		//todo 如果webApplicationContext不是null，说明已经初始化过了，在spring容器初始化的时候，会设置这个值得，
+		// 因此这里判断是true
 		if (this.webApplicationContext != null) {
+			//todo 设置已经存在的上下文
 			// A context instance was injected at construction time -> use it
 			wac = this.webApplicationContext;
+			//todo 如果是ConfigurableWebApplicationContext类型的，需要先设置WebApplicationContext为根上下文
 			if (wac instanceof ConfigurableWebApplicationContext) {
 				ConfigurableWebApplicationContext cwac = (ConfigurableWebApplicationContext) wac;
+				//todo 检查当前上下文是否是活跃的，既可以用的，如果不是的则需要刷新
 				if (!cwac.isActive()) {
+					//todo 如果还没有设置根上下文则进行设置
 					// The context has not yet been refreshed -> provide services such as
 					// setting the parent context, setting the application context id, etc
 					if (cwac.getParent() == null) {
@@ -575,10 +595,13 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 						// the root application context (if any; may be null) as the parent
 						cwac.setParent(rootContext);
 					}
+					//todo 配置并刷新web上下文
 					configureAndRefreshWebApplicationContext(cwac);
 				}
 			}
 		}
+		//todo 如果wac是null，则说明web上下文是null，则在servlet中寻找是否存在web上下文，
+		// 这里寻找的是属性名为FrameworkServlet.class.getName() + ".CONTEXT."+当前servlet的名称的上下文
 		if (wac == null) {
 			// No context instance was injected at construction time -> see if one
 			// has been registered in the servlet context. If one exists, it is assumed
@@ -586,23 +609,29 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// user has performed any initialization such as setting the context id
 			wac = findWebApplicationContext();
 		}
+		//todo 如果servlet中也不存在上下文，则创建一个
 		if (wac == null) {
 			// No context instance is defined for this servlet -> create a local one
 			wac = createWebApplicationContext(rootContext);
 		}
 
+		//todo 检查onRefresh是否已经调用了
 		if (!this.refreshEventReceived) {
 			// Either the context is not a ConfigurableApplicationContext with refresh
 			// support or the context injected at construction time had already been
 			// refreshed -> trigger initial onRefresh manually here.
 			synchronized (this.onRefreshMonitor) {
+				//todo 模板方法，可以覆盖该方法以添加特定于servlet的刷新工作。成功刷新上下文后调用
 				onRefresh(wac);
 			}
 		}
 
+		//todo 我们应该将上下文作为ServletContext属性发布吗，默认为true
 		if (this.publishContext) {
+			//todo 获取要设置的属性名 FrameworkServlet.class.getName() + ".CONTEXT."+当前servlet的名称
 			// Publish the context as a servlet context attribute.
 			String attrName = getServletContextAttributeName();
+			//todo 将当前上下文设置到servlet上下文中
 			getServletContext().setAttribute(attrName, wac);
 		}
 
@@ -988,21 +1017,31 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
+		//todo 获取当前系统时间，用来计算这个步骤的处理耗时
 		long startTime = System.currentTimeMillis();
 		Throwable failureCause = null;
 
+		//todo 获取当前服务运行所在地区，在RequestContextFilter中进行处理设值
 		LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
+		//todo 创建相关地区的对象的LocalContext，
 		LocaleContext localeContext = buildLocaleContext(request);
 
+		//todo 获取请求的属性，此时的请求相关的属性会在RequestContextFilter中进行处理设值
 		RequestAttributes previousAttributes = RequestContextHolder.getRequestAttributes();
+		//todo 创建requestAttributes，此时previousAttributes已经包含了request跟response，ServletRequestAttributes是RequestAttributes子类
 		ServletRequestAttributes requestAttributes = buildRequestAttributes(request, response, previousAttributes);
 
+		//todo 从request获取WebAsyncManager,在filter阶段会创建WebAsyncManager，表示是不是异步相应的请求
 		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+		//todo 将FrameworkServlet的内部类RequestBindingInterceptor设置到asyncManager中，
+		// 用于在异步中初始化跟重新设置FrameworkServlet
 		asyncManager.registerCallableInterceptor(FrameworkServlet.class.getName(), new RequestBindingInterceptor());
 
+		//todo 将localeContext跟requestAttributes设置到LocaleContextHolder跟RequestContextHolder中
 		initContextHolders(request, localeContext, requestAttributes);
 
 		try {
+			//todo 进行业务处理
 			doService(request, response);
 		}
 		catch (ServletException | IOException ex) {
@@ -1015,11 +1054,14 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 
 		finally {
+			//todo 移除threadLocal中的请求相关信息，attribute跟context信息
 			resetContextHolders(request, previousLocaleContext, previousAttributes);
 			if (requestAttributes != null) {
 				requestAttributes.requestCompleted();
 			}
+			//todo 打印结果
 			logResult(request, response, failureCause, asyncManager);
+			//todo 发布请求处理完成事件
 			publishRequestHandledEvent(request, response, startTime, failureCause);
 		}
 	}

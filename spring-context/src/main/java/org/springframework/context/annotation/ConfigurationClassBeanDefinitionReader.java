@@ -115,7 +115,10 @@ class ConfigurationClassBeanDefinitionReader {
 	 * with the registry based on its contents.
 	 */
 	public void loadBeanDefinitions(Set<ConfigurationClass> configurationModel) {
+		//todo 对import标签处理的类
+		// TrackedConditionEvaluator主要是处理@import标签同时也you的。举个例子：如果A类通过@import类引入了另外的一个B类，如果A类需要跳过解析，那么B类也肯定需要调过解析。如果A类需要进行解析，那么B类也需要进行解析
 		TrackedConditionEvaluator trackedConditionEvaluator = new TrackedConditionEvaluator();
+		//todo 循环处理
 		for (ConfigurationClass configClass : configurationModel) {
 			loadBeanDefinitionsForConfigurationClass(configClass, trackedConditionEvaluator);
 		}
@@ -124,27 +127,37 @@ class ConfigurationClassBeanDefinitionReader {
 	/**
 	 * Read a particular {@link ConfigurationClass}, registering bean definitions
 	 * for the class itself and all of its {@link Bean} methods.
+	 * 当前的配置类也可能是通过@import标签进行引入的，所以有必要进行对最原始的进行引入的类进行分析，决定当前的类是否需要跳过。如果需要调过，则一处对应的需要进行注册bean列表中的改bean，如果不需要则进行注册处理
+	 *
 	 */
 	private void loadBeanDefinitionsForConfigurationClass(
 			ConfigurationClass configClass, TrackedConditionEvaluator trackedConditionEvaluator) {
 
+		//todo 检查当前的bean是否是通过@import注解引入的，如果是的则循环解析到原始的贴有@import标签的bean，检查是否有@conditionl标签并检查是否需要跳过
 		if (trackedConditionEvaluator.shouldSkip(configClass)) {
+			//todo 获取当前配置bean的beanName
 			String beanName = configClass.getBeanName();
+			//todo 如果当前beanName在BeanDefinitionRegistry中需要注册的bean的列表中则移除，因为这个bean需要被跳过
 			if (StringUtils.hasLength(beanName) && this.registry.containsBeanDefinition(beanName)) {
 				this.registry.removeBeanDefinition(beanName);
 			}
+			//todo 移除在ImportRegistry中imports列表中的该beanName，因为这个bean需要被跳过
 			this.importRegistry.removeImportingClass(configClass.getMetadata().getClassName());
 			return;
 		}
 
+		//todo 如果当前配置bean是通过@import注解进行注入的则进行注册
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
+		//todo 获取当前配置类的BeanMethod,就是在方法上面贴了@Bean注解的方法
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
+		//todo 加载configClass中的配置的resource
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+		//todo 加载configClass中的配置的ImportBeanDefinitionRegistrar
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 
@@ -450,24 +463,33 @@ class ConfigurationClassBeanDefinitionReader {
 		private final Map<ConfigurationClass, Boolean> skipped = new HashMap<>();
 
 		public boolean shouldSkip(ConfigurationClass configClass) {
+			//todo 检查当前的配置类是否需要调过，因为这里是前面的直接获取到的配置类，如果当前类需要跳过那么，内部的也必定需要跳过
+			// 如果是null则说明这个类不是需要跳过的，但是也不代表是不需要跳过的，因为如果是被引入的则决定于最外面的一层bean是否需要跳过
 			Boolean skip = this.skipped.get(configClass);
 			if (skip == null) {
+				//todo 当前的配置bean是不是通过@import注解引入的，不是的则不需要跳过，因为只有是在bean内部定义的bean才需要判断外面的一层bean是否需要跳过
 				if (configClass.isImported()) {
 					boolean allSkipped = true;
+					//todo 获取通过@import标签引入这个配置类的bean
 					for (ConfigurationClass importedBy : configClass.getImportedBy()) {
+						//todo 检查引入配置类的bean的是否需要跳过（这里一直会检查到最终的引入类，来决定是否需要全部跳过）
 						if (!shouldSkip(importedBy)) {
 							allSkipped = false;
 							break;
 						}
 					}
+					//todo 如果所有的bean（1.当前的配置bean，2.引入当前配置bean） 的bean 都是需要跳过的，则这个配置bean需要跳过
 					if (allSkipped) {
 						// The config classes that imported this one were all skipped, therefore we are skipped...
 						skip = true;
 					}
 				}
+				//todo 能够到这一步的是最层的bean，例如A引入了B，B引入了C，那么A就是最外层的bean，检查A对应的@condition决定是否需要跳过，
 				if (skip == null) {
+					//todo 这里就是对ConditionEvaluator方法的调用
 					skip = conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN);
 				}
+				//todo 将对应的配置bean记录起来是否需要跳过
 				this.skipped.put(configClass, skip);
 			}
 			return skip;

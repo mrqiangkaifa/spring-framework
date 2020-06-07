@@ -228,6 +228,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 */
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+		//todo 给当前的BeanDefinitionRegistry类型的beanFactory设置一个全局hash值，避免重复处理
 		int registryId = System.identityHashCode(registry);
 		if (this.registriesPostProcessed.contains(registryId)) {
 			throw new IllegalStateException(
@@ -237,8 +238,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			throw new IllegalStateException(
 					"postProcessBeanFactory already called on this post-processor against " + registry);
 		}
+		//todo 加入到已经处理的PostProcessed集合中
 		this.registriesPostProcessed.add(registryId);
 
+		//todo 进行处理
 		processConfigBeanDefinitions(registry);
 	}
 
@@ -248,19 +251,24 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 */
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+		//todo 给当前的ConfigurableListableBeanFactory类型的beanFactory设置一个全局hash值，避免重复处理
 		int factoryId = System.identityHashCode(beanFactory);
 		if (this.factoriesPostProcessed.contains(factoryId)) {
 			throw new IllegalStateException(
 					"postProcessBeanFactory already called on this post-processor against " + beanFactory);
 		}
+		//todo 加入到已经处理的PostProcessed集合中
 		this.factoriesPostProcessed.add(factoryId);
+		//todo 如果当前的beanFactory不在registriesPostProcessed中则进行处理
 		if (!this.registriesPostProcessed.contains(factoryId)) {
 			// BeanDefinitionRegistryPostProcessor hook apparently not supported...
 			// Simply call processConfigurationClasses lazily at this point then.
 			processConfigBeanDefinitions((BeanDefinitionRegistry) beanFactory);
 		}
 
+		//todo 将beanFactory中用Configuration注解配置的bean进行动态加强
 		enhanceConfigurationClasses(beanFactory);
+		//todo 增加一个ImportAwareBeanPostProcessor
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
 	}
 
@@ -270,6 +278,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
+		//todo 获取registry中定义的所有的bean的name
 		String[] candidateNames = registry.getBeanDefinitionNames();
 
 		for (String beanName : candidateNames) {
@@ -322,10 +331,14 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
+			//todo 第一个会调用shouldSkip的位置，这里是解析能够直接获取的候选配置bean。
+			// 可能是Component，ComponentScan，Import，ImportResource或者有Bean注解的bean
 			parser.parse(candidates);
 			parser.validate();
 
+			//todo 获取上面封装已经解析过的配置bean的ConfigurationClass集合
 			Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
+			//todo 移除前面已经处理过的
 			configClasses.removeAll(alreadyParsed);
 
 			// Read the model and create bean definitions based on its content
@@ -334,6 +347,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
+			//todo 第二个会调用shouldSkip的位置，这里是加载configurationClasse中内部可能存在配置bean，
+			// 比如方法上加了@Bean或者@Configuration标签的bean
 			this.reader.loadBeanDefinitions(configClasses);
 			alreadyParsed.addAll(configClasses);
 
