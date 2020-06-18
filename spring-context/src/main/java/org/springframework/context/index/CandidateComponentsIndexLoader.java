@@ -96,10 +96,12 @@ public final class CandidateComponentsIndexLoader {
 		}
 
 		try {
+			//todo 解析"META-INF/spring.components"文件
 			Enumeration<URL> urls = classLoader.getResources(COMPONENTS_RESOURCE_LOCATION);
 			if (!urls.hasMoreElements()) {
 				return null;
 			}
+			//todo 将解析的结果转化为Properties
 			List<Properties> result = new ArrayList<>();
 			while (urls.hasMoreElements()) {
 				URL url = urls.nextElement();
@@ -110,6 +112,7 @@ public final class CandidateComponentsIndexLoader {
 				logger.debug("Loaded " + result.size() + "] index(es)");
 			}
 			int totalCount = result.stream().mapToInt(Properties::size).sum();
+			//todo 根据Properties创建CandidateComponentsIndex
 			return (totalCount > 0 ? new CandidateComponentsIndex(result) : null);
 		}
 		catch (IOException ex) {

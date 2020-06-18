@@ -1,6 +1,7 @@
 package org.springframework.analysis.wukong;
 
 
+import org.springframework.analysis.wukong.aop.UserService;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.support.StaticMessageSource;
 
@@ -15,6 +16,12 @@ public class Test {
 		System.out.println("ceshi");
 		ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("simpleContext.xml");
 		StaticMessageSource object = (StaticMessageSource)ctx.getBean("someMessageSource");
+		//todo aop
+		UserService userServiceProxy = (UserService)ctx.getBean("userServiceProxy");
+		userServiceProxy.addUser();
+		//todo aopcofig
+		UserService userServiceAopConfig = (UserService)ctx.getBean("userServiceAopConfig");
+		userServiceAopConfig.addUser();
 		ctx.close();
 	}
 

@@ -1,5 +1,7 @@
 package org.example;
 
+import org.example.aop.UserService;
+import org.example.beanload.AppBeanLoad;
 import org.example.test.AServiceImpl;
 import org.example.test.Car;
 import org.example.test.IBaseService;
@@ -22,7 +24,6 @@ public class App
     public static void main( String[] args ) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
 		ApplicationContext context = new ClassPathXmlApplicationContext("simpleContext.xml");
 		StaticMessageSource staticMessageSource = (StaticMessageSource)context.getBean("someMessageSource");
-		User testUser = (User)context.getBean("testUser");
 		Car testFactoryCar = (Car)context.getBean("car");
 		AServiceImpl  iBaseService = (AServiceImpl)context.getBean(IBaseService.class);
 		Method method = iBaseService.getClass().getDeclaredMethod("Get",Person.class);
@@ -33,5 +34,17 @@ public class App
 		System.out.println(iBaseService.getPerson().getService().Get(person));
 		System.out.println("ceshi");
 		System.out.println(context.getApplicationName());
+		//todo 自定义标签
+		User testUser = (User)context.getBean("testUser");
+
+		//todo spring简单使用
+		AppBeanLoad.main(args);
+
+		//todo aop
+		UserService userServiceProxy = (UserService)context.getBean("userServiceProxy");
+		userServiceProxy.addUser();
+		//todo aopcofig
+		UserService userServiceAopConfig = (UserService)context.getBean("userServiceAopConfig");
+		userServiceAopConfig.addUser();
     }
 }

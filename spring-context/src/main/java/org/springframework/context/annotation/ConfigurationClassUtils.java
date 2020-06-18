@@ -121,10 +121,14 @@ abstract class ConfigurationClassUtils {
 			}
 		}
 
+		//todo 获取源数据中包含Configuration注解的信息
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
+		//todo 如果存在Configuration注解，并且proxyBeanMethods是true，则表示需要进行代理
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		//todo 如果存在Configuration注解，但是proxyBeanMethods是false，则表示不需要进行代理
+		// 如果不存在Configuration注解，但是如果bean中包含Component，ComponentScan，Import，ImportResource或者Bean注解，则也不需要代理，但是是候选bean
 		else if (config != null || isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}

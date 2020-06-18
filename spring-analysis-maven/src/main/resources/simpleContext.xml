@@ -2,10 +2,10 @@
 
 <beans xmlns:test="http://www.wukong.org/schema/wukong"
 	   xmlns="http://www.springframework.org/schema/beans"
-	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
 	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
-       http://www.wukong.org/schema/wukong http://www.wukong.org/schema/wukong.xsd"
-	   >
+       http://www.wukong.org/schema/wukong http://www.wukong.org/schema/wukong.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop-2.0.xsd"
+>
 
 	<bean id="someMessageSource" name="yourMessageSource"
 			class="org.springframework.context.support.StaticMessageSource"/>
@@ -22,5 +22,51 @@
 	<bean id="car" class="org.example.test.TestFactoryBean" >
 		<property name="carInfo" value="超级跑车,400,2000000"/>
 	</bean>
+
 	<test:wukong id="testUser" name="测试" email="111111111@gmail.com"/>
+
+
+	<!-- 1 创建目标类 -->
+	<bean id="userService" class="org.example.aop.UserServiceImpl"></bean>
+	<bean id="userServiceAopConfig" class="org.example.aop.aopconfig.UserServiceAopConfigImpl"></bean>
+	<!-- 2 创建切面类 -->
+	<bean id="myAspect" class="org.example.aop.MyAspect"></bean>
+	<!-- 3 创建代理类
+            * 使用工厂bean FactoryBean ，底层调用 getObject() 返回特殊bean
+            * ProxyFactoryBean 用于创建代理工厂bean，生成特殊代理对象
+                interfaces : 确定接口们
+                    通过<array>可以设置多个值
+                    只有一个值时，value=""
+                target : 确定目标类
+                interceptorNames : 通知 切面类的名称，类型String[]，如果设置一个值 value=""
+                optimize :强制使用cglib
+                    <property name="optimize" value="true"></property>
+            底层机制
+                如果目标类有接口，采用jdk动态代理
+                如果没有接口，采用cglib 字节码增强
+                如果声明 optimize = true ，无论是否有接口，都采用cglib
+        -->
+	<bean id="userServiceProxy" class="org.springframework.aop.framework.ProxyFactoryBean">
+		<property name="interfaces" value="org.example.aop.UserService"></property>
+		<property name="target" ref="userService"></property>
+		<property name="interceptorNames" value="myAspect"></property>
+	</bean>
+
+	<!-- 4 aop编程
+	   4.1 导入命名空间
+	   4.2 使用 <aop:config>进行配置
+			   proxy-target-class="true" 声明时使用cglib代理
+		   <aop:pointcut> 切入点 ，从目标对象获得具体方法
+		   <aop:advisor> 特殊的切面，只有一个通知 和 一个切入点
+			   advice-ref 通知引用
+			   pointcut-ref 切入点引用
+	   4.3 切入点表达式
+		   execution(* org.example.aop.aopconfig.*.*(..))
+		   选择方法         返回值任意   包             类名任意   方法名任意   参数任意
+-->
+	<aop:config proxy-target-class="true">
+		<aop:pointcut id="myPointCut" expression="execution(* org.example.aop.aopconfig.*.*(..))" />
+		<aop:advisor advice-ref="myAspect" pointcut-ref="myPointCut"/>
+	</aop:config>
+
 </beans>

@@ -309,10 +309,16 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @return a corresponding Set of autodetected bean definitions
 	 */
 	public Set<BeanDefinition> findCandidateComponents(String basePackage) {
+
+		//todo componentsIndex对象包含了扫描“META-INF/spring.components”文件后封装起来的需要注册的bean的信息，在这里与来basePackage同时进行处理，
+		// 如果“META-INF/spring.components”文件不存在，则componentsIndex为null
+		// 对于“META-INF/spring.components”文件，这个是spring在5.0版本的时候新增的一个功能。这个文件也可以用来定义需要注册的bean
+		// 这个文件的读取时机是在ClassPathBeanDefinitionScanner类被初始化的时候也就是上面parse方法调用的第一行
 		if (this.componentsIndex != null && indexSupportsIncludeFilters()) {
 			return addCandidateComponentsFromIndex(this.componentsIndex, basePackage);
 		}
 		else {
+			//todo 只处理basePackage
 			return scanCandidateComponents(basePackage);
 		}
 	}
@@ -416,8 +422,10 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	private Set<BeanDefinition> scanCandidateComponents(String basePackage) {
 		Set<BeanDefinition> candidates = new LinkedHashSet<>();
 		try {
+			//todo 获取包路径
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
 					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
+			//todo 将对应的包中的类封装成resources
 			Resource[] resources = getResourcePatternResolver().getResources(packageSearchPath);
 			boolean traceEnabled = logger.isTraceEnabled();
 			boolean debugEnabled = logger.isDebugEnabled();
@@ -425,17 +433,23 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 				if (traceEnabled) {
 					logger.trace("Scanning " + resource);
 				}
+				//todo 需要时可读的
 				if (resource.isReadable()) {
 					try {
+						//todo 获取封装了resource的MetadataReader
 						MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
+						//todo 检查metadataReader中的对象的className是否符合指定的excludeFilters跟includeFilters的筛选
 						if (isCandidateComponent(metadataReader)) {
+							//todo 创建一个ScannedGenericBeanDefinition对象
 							ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
 							sbd.setResource(resource);
 							sbd.setSource(resource);
+							//todo 检查对应的对象1.是不是一个独立的类；2.一个具体的类不是抽象的不是接口类，如果是抽象的那么必须有对应的Lookup注解指定实现的方法
 							if (isCandidateComponent(sbd)) {
 								if (debugEnabled) {
 									logger.debug("Identified candidate component class: " + resource);
 								}
+								//todo 加入到候选的bean中
 								candidates.add(sbd);
 							}
 							else {

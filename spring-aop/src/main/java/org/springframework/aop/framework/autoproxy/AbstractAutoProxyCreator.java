@@ -295,7 +295,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
 		//todo 如果bean被标识为子类代理的bean，则使用配置的拦截器创建代理
 		if (bean != null) {
-			//todo 根据给定的bean的class和那么构建出key，格式：beanClassName_beanName
+			//todo 根据给定的bean的class和name构建出key，格式：beanClassName_beanName
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
 			//todo 判断是否这个bean已经被代理过
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
