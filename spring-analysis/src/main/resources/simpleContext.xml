@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "https://www.springframework.org/dtd/spring-beans-2.0.dtd">
-
-<beans xmlns:aop="http://www.springframework.org/schema/aop">
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+       http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop-2.0.xsd"
+>
 
 	<bean id="someMessageSource" name="yourMessageSource"
 			class="org.springframework.context.support.StaticMessageSource"/>
@@ -13,7 +15,7 @@
 	<bean id="userService" class="org.springframework.analysis.wukong.aop.UserServiceImpl"></bean>
 	<bean id="userServiceAopConfig" class="org.springframework.analysis.wukong.aop.aopconfig.UserServiceAopConfigImpl"></bean>
 	<!-- 2 创建切面类 -->
-	<bean id="myAspect" class="org.example.aop.MyAspect"></bean>
+	<bean id="myAspect" class="org.springframework.analysis.wukong.aop.MyAspect"></bean>
 	<!-- 3 创建代理类
             * 使用工厂bean FactoryBean ，底层调用 getObject() 返回特殊bean
             * ProxyFactoryBean 用于创建代理工厂bean，生成特殊代理对象
@@ -47,8 +49,8 @@
 		   execution(* org.example.aop.aopconfig.*.*(..))
 		   选择方法         返回值任意   包             类名任意   方法名任意   参数任意
    -->
-	<!--<aop:config proxy-target-class="true">
+	<aop:config proxy-target-class="true">
 		<aop:pointcut id="myPointCut" expression="execution(* org.example.aop.aopconfig.*.*(..))" />
 		<aop:advisor advice-ref="myAspect" pointcut-ref="myPointCut"/>
-	</aop:config>-->
+	</aop:config>
 </beans>

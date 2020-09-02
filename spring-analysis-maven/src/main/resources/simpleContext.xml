@@ -64,9 +64,9 @@
 		   execution(* org.example.aop.aopconfig.*.*(..))
 		   选择方法         返回值任意   包             类名任意   方法名任意   参数任意
 -->
-	<aop:config proxy-target-class="true">
+	<!--<aop:config proxy-target-class="true">
 		<aop:pointcut id="myPointCut" expression="execution(* org.example.aop.aopconfig.*.*(..))" />
 		<aop:advisor advice-ref="myAspect" pointcut-ref="myPointCut"/>
-	</aop:config>
+	</aop:config>-->
 
 </beans>
